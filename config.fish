@@ -1,9 +1,16 @@
 set -U fish_greeting
+set HOMEBREW_NO_ENV_HINTS "true"
+
+function arx
+    arxed
+end
+function arxed
+    cd "$HOME/arxed"
+end
 
 function vim
 	nvim $argv
 end
-
 function diff
 	git diff
 end
@@ -75,3 +82,6 @@ set --export BUN_INSTALL "$HOME/.bun"
 set --export PATH $BUN_INSTALL/bin $PATH
 fzf_configure_bindings --directory=\ct
 # 
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/Users/dmytro/Downloads/google-cloud-sdk/path.fish.inc' ]; . '/Users/dmytro/Downloads/google-cloud-sdk/path.fish.inc'; end

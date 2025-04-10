@@ -375,7 +375,7 @@ vim.keymap.set('n', '<leader>hm', ':lua require("harpoon.ui").toggle_quick_menu(
 vim.keymap.set('n', '<leader>q', ':q<CR>', { desc = '[Q]uit' })
 vim.keymap.set('n', '<leader>l', ':noh<CR>', { desc = 'remove high[L]ight', silent = true })
 vim.keymap.set('n', '<leader>e', ':Neotree position=float reveal=true<CR>', { desc = '[E]xplorer here' })
-vim.keymap.set('n', '<leader>fe', ':vsplit<CR><C-w>l:Neotree position=current reveal=true<CR>', { desc = '[E]xplorer here' })
+vim.keymap.set('n', '<leader>fe', ':vsplit<CR><C-w>l<C-\\><C-n><C-W>h:Neotree position=current reveal=true<CR>', { desc = '[E]xplorer here' })
 
 -- begin Terminal
 vim.keymap.set('t', '<leader>q', '<C-\\><C-n>:q<CR>', { desc = 'Quit insert mode in terminal' })
