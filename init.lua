@@ -21,6 +21,26 @@ vim.g.neotree_show_hidden = 1
 vim.g.neovide_cursor_animation_length = 0
 vim.g.neovide_scroll_animation_length = 0
 
+vim.opt.termguicolors = true
+
+local function set_custom_highlights()
+  vim.api.nvim_set_hl(0, 'Todo', { fg = '#FFFF00', bold = true })
+  vim.api.nvim_set_hl(0, 'FixMe', { fg = '#FF0000', bold = true })
+  vim.api.nvim_set_hl(0, 'Note', { fg = '#00FFFF', bold = false })
+  vim.api.nvim_set_hl(0, 'Warning', { fg = '#FFA500', bold = true })
+end
+
+local customHighlightsGroup = vim.api.nvim_create_augroup('CustomHighlightOverrides', { clear = true })
+
+vim.api.nvim_create_autocmd('ColorScheme', {
+  group = customHighlightsGroup,
+  pattern = '*',
+  callback = set_custom_highlights,
+  desc = 'Apply custom highlight overrides after colorscheme loads',
+})
+
+-- Optional: Uncomment the line below to apply immediately on startup too
+-- set_custom_highlights()
 
 -- Install package manager
 --    https://github.com/folke/lazy.nvim
@@ -114,6 +134,8 @@ require('lazy').setup({
   },
   {
     "folke/trouble.nvim",
+    cmd = "Trouble",
+    opts = {},
     dependencies = {
       "nvim-tree/nvim-web-devicons"
     }
@@ -391,7 +413,7 @@ vim.keymap.set('n', '<leader>tt', ':tabnew<CR>:terminal<CR>i', { desc = '[T]ermi
 vim.keymap.set('n', '<leader>u', ':UndotreeToggle<CR>', { desc = "toggle [U]ndotree" })
 -- end Terminal
 
-vim.keymap.set('n', '<leader>td', ':TroubleToggle document_diagnostics<CR>', { desc = '[T]rouble [D]ocument' })
+vim.keymap.set('n', '<leader>td', '<cmd>Trouble diagnostics toggle filter.buf=0<cr>', { desc = '[T]rouble [D]ocument' })
 
 vim.keymap.set('n', '<leader>bn', ':tabNext<CR>', { desc = '[B]uffer [N]ext' })
 vim.keymap.set('n', '<leader>bp', ':tabprevious<CR>', { desc = '[B]uffer [P]revious' })
