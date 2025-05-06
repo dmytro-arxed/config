@@ -15,6 +15,10 @@ function diff
 	git diff
 end
 
+function update_branch
+    git pull origin main
+end
+
 function remove_branches
 	git branch | xargs git branch -D
 end
