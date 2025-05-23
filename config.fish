@@ -1,5 +1,5 @@
 set -U fish_greeting
-set HOMEBREW_NO_ENV_HINTS "true"
+set HOMEBREW_NO_ENV_HINTS true
 
 function arx
     arxed
@@ -80,6 +80,7 @@ fish_add_path "$HOME/.local/share/gem/ruby/3.0.0/bin"
 fish_add_path "/usr/local/go/bin"
 fish_add_path /opt/homebrew/bin
 fish_add_path "$HOME/.nvm/v22.14.0/bin"
+fish_add_path "$HOME/.cargo/bin"
 
 # bun
 set --export BUN_INSTALL "$HOME/.bun"

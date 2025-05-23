@@ -148,6 +148,22 @@ require('lazy').setup({
       vim.cmd "colorscheme everforest"
     end
   },
+  {
+		"trunk-io/neovim-trunk",
+		lazy = false,
+		-- optionally pin the version
+		-- tag = "v0.1.1",
+		-- these are optional config arguments (defaults shown)
+		config = {
+			-- trunkPath = "trunk",
+			-- lspArgs = {},
+			-- formatOnSave = true,
+                        -- formatOnSaveTimeout = 10, -- seconds
+			-- logLevel = "info"
+		},
+		main = "trunk",
+		dependencies = {"nvim-telescope/telescope.nvim", "nvim-lua/plenary.nvim"}
+  },
 
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
@@ -269,6 +285,46 @@ opts = {
   --    An additional note is that if you only copied in the `init.lua`, you can just comment this line
   --    to get rid of the warning telling you that there are not plugins in `lua/custom/plugins/`.
 }, {})
+
+require'nvim-treesitter.configs'.setup {
+  ensure_installed = { "typescript", "tsx", "go", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline" },
+
+  -- Install parsers synchronously (only applied to `ensure_installed`)
+  sync_install = false,
+
+  -- Automatically install missing parsers when entering buffer
+  -- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
+  auto_install = true,
+
+  -- List of parsers to ignore installing (or "all")
+  ignore_install = { "javascript" },
+
+  ---- If you need to change the installation directory of the parsers (see -> Advanced Setup)
+  -- parser_install_dir = "/some/path/to/store/parsers", -- Remember to run vim.opt.runtimepath:append("/some/path/to/store/parsers")!
+
+  highlight = {
+    enable = true,
+
+    -- NOTE: these are the names of the parsers and not the filetype. (for example if you want to
+    -- disable highlighting for the `tex` filetype, you need to include `latex` in this list as this is
+    -- the name of the parser)
+    -- list of language that will be disabled
+    -- Or use a function for more flexibility, e.g. to disable slow treesitter highlight for large files
+    disable = function(lang, buf)
+        local max_filesize = 100 * 1024 -- 100 KB
+        local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
+        if ok and stats and stats.size > max_filesize then
+            return true
+        end
+    end,
+
+    -- Setting this to true will run `:h syntax` and tree-sitter at the same time.
+    -- Set this to `true` if you depend on 'syntax' being enabled (like for indentation).
+    -- Using this option may slow down your editor, and you may see some duplicate highlights.
+    -- Instead of true it can also be a list of languages
+    additional_vim_regex_highlighting = false,
+  },
+}
 
 vim.lsp.handlers['textDocument/publishDiagnostics'] = vim.lsp.with(
     vim.lsp.diagnostic.on_publish_diagnostics,
@@ -514,12 +570,59 @@ local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require('cmp_nvim_lsp').default_capabilities(capabilities)
 
 -- Ensure the servers above are installed
+local lspconfig = require('lspconfig')
 
+require("mason").setup()
 require("mason-lspconfig").setup {
     automatic_enable = {
         "lua_ls",
-        "vimls"
+        "vimls",
+        "typescript-language-server", 
+        "ts_ls",
+        "jsonls"
     }
+}
+
+
+lspconfig.ts_ls.setup {
+    on_attach = on_attach,
+    capabilities = capabilities,
+}
+-- ... other servers
+lspconfig.gopls.setup {
+    on_attach = on_attach,
+    capabilities = capabilities,
+    settings = {
+        gopls = {
+            buildFlags = { "-tags=wireinject" },
+            gofumpt = true,
+            codelenses = {
+                gc_references = true,
+                generate = true,
+                test = true,
+            },
+            hints = {
+                constantValues = true,
+                functionTypeParameters = true,
+                parameterNames = true,
+                rangeVariableTypes = true,
+                compositeLiteralFields = true,
+                compositeLiteralTypes = true,
+                assignVariableTypes = true,
+            },
+            analyses = {
+                fieldalignment = true,
+                nilness = true,
+                shadow = true,
+                unusedparams = true,
+                unusedwrite = true,
+                usesgenerics = true,
+            },
+            usePlaceholders = true,
+            staticcheck = true,
+            directoryFilters = {"-vendor"},
+        },
+    },
 }
 
 -- nvim-cmp setup
