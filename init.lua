@@ -1,3 +1,5 @@
+local vim = vim
+
 vim.o.background = "dark"
 vim.o.shell = "/opt/homebrew/bin/fish"
 vim.g.shiftwidth = 2
@@ -74,26 +76,6 @@ require('lazy').setup({
     build = ":TSUpdate",
   },
   {
-		"trunk-io/neovim-trunk",
-		lazy = false,
-		config = {
-		},
-		main = "trunk",
-		dependencies = {"nvim-telescope/telescope.nvim", "nvim-lua/plenary.nvim"}
-	},
-  -- NOTE: First, some plugins that don't require any configuration
-  'ryanoasis/vim-devicons',
-  'ThePrimeagen/harpoon',
-  -- Git related plugins
-  'airblade/vim-rooter',
-  'tpope/vim-fugitive',
-  'tpope/vim-rhubarb',
-  {
-    'windwp/nvim-autopairs',
-    event = "InsertEnter",
-    config = true,
-  },
-  {
     'windwp/nvim-ts-autotag',
     config = function ()
       require('nvim-ts-autotag').setup()
@@ -108,6 +90,13 @@ require('lazy').setup({
         -- Configuration here, or leave empty to use defaults
       })
     end
+  },
+  {
+    'windwp/nvim-autopairs',
+    event = "InsertEnter",
+    config = true
+    -- use opts = {} for passing setup options
+    -- this is equivalent to setup({}) function
   },
   'mhinz/vim-startify',
   'mbbill/undotree',
@@ -424,9 +413,9 @@ require('telescope').setup {
 
 -- Enable telescope fzf native, if installed
 pcall(
-require('telescope').load_extension,
-'fzf',
-'live_grep_args'
+  require('telescope').load_extension,
+  'fzf',
+  'live_grep_args'
 )
 
 
@@ -457,11 +446,36 @@ vim.keymap.set('t', '<C-h>', '<C-\\><C-n><C-W>h', { desc='move left' })
 vim.keymap.set('t', '<C-j>', '<C-\\><C-n><C-W>j', { desc='move down' })
 vim.keymap.set('t', '<C-k>', '<C-\\><C-n><C-W>k', { desc='move up' })
 
-vim.keymap.set('n', '<leader>tv', ':vsplit<CR><C-W>l:terminal<CR>i', { desc = '[T]erminal [V]ertical' })
-vim.keymap.set('n', '<leader>th', ':split<CR><C-W>j:terminal<CR>i', { desc = '[T]erminal [H]orizontal' })
-vim.keymap.set('n', '<leader>tt', ':tabnew<CR>:terminal<CR>i', { desc = '[T]erminal [T]ab' })
-vim.keymap.set('n', '<leader>u', ':UndotreeToggle<CR>', { desc = "toggle [U]ndotree" })
+local function set_root_and_open_terminal(command)
+  local project_markers = { ".git", "Makefile", "go.mod", ".project" }
+  local root = vim.fs.root(0, project_markers)
+  if root then
+    vim.api.nvim_set_current_dir(root)
+  else
+    vim.notify("No project root found. Opening terminal in current directory.", vim.log.levels.WARN) -- Optional notification
+  end
+  vim.cmd(command)
+  vim.api.nvim_feedkeys("i", "n", true)
+end
+
+-- Keymap to open a vertical terminal split in the project root
+vim.keymap.set('n', '<leader>tv', function()
+  set_root_and_open_terminal('vsplit | wincmd L | terminal')
+end, { desc = '[T]erminal [V]ertical' })
+
+-- Keymap to open a horizontal terminal split in the project root
+vim.keymap.set('n', '<leader>th', function()
+  set_root_and_open_terminal('split | terminal')
+end, { desc = '[T]erminal [H]orizontal' })
+
+-- Keymap to open a new terminal tab in the project root
+vim.keymap.set('n', '<leader>tt', function()
+  set_root_and_open_terminal('tabnew | terminal')
+end, { desc = '[T]erminal [T]ab' })
+
 -- end Terminal
+
+vim.keymap.set('n', '<leader>u', ':UndotreeToggle<CR>', { desc = "toggle [U]ndotree" })
 
 vim.keymap.set('n', '<leader>td', '<cmd>Trouble diagnostics toggle filter.buf=0<cr>', { desc = '[T]rouble [D]ocument' })
 
@@ -494,16 +508,6 @@ end, { desc = '[/] Fuzzily search in current buffer' })
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = "Go to previous diagnostic message" })
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = "Go to next diagnostic message" })
 vim.keymap.set('n', '<leader>d', vim.diagnostic.setloclist, { desc = "Open diagnostics list" })
-
--- LSP settings.
---  This function gets run when an LSP connects to a particular buffer.
-local on_attach = function(_, bufnr)
-  -- NOTE: Remember that lua is a real programming language, and as such it is possible
-  -- to define small helper and utility functions so you don't have to repeat yourself
-  -- many times.
-  --
-  -- In this case, we create a function that lets us more easily define mappings specific
-  -- for LSP related items. It sets the mode, buffer and description for us each time.
   local nmap = function(keys, func, desc)
     if desc then
       desc = 'LSP: ' .. desc
@@ -535,35 +539,22 @@ local on_attach = function(_, bufnr)
     print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
   end, '[W]orkspace [L]ist Folders')
 
+-- LSP settings.
+--  This function gets run when an LSP connects to a particular buffer.
+local on_attach = function(_, bufnr)
+  print('attached')
+  -- NOTE: Remember that lua is a real programming language, and as such it is possible
+  -- to define small helper and utility functions so you don't have to repeat yourself
+  -- many times.
+  --
+  -- In this case, we create a function that lets us more easily define mappings specific
+  -- for LSP related items. It sets the mode, buffer and description for us each time.
+
   -- Create a command `:Format` local to the LSP buffer
   vim.api.nvim_buf_create_user_command(bufnr, 'Format', function(_)
     vim.lsp.buf.format()
   end, { desc = 'Format current buffer with LSP' })
 end
-
--- Enable the following language servers
---  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
---
---  Add any additional override configuration in the following tables. They will be passed to
---  the `settings` field of the server config. You must look up that documentation yourself.
-local servers = {
-  -- clangd = {},
-  -- gopls = {},
-  -- pyright = {},
-  -- rust_analyzer = {},
-  lua_ls = {
-    Lua = {
-      runtime = { version = 'LuaJIT' },
-      workspace = {
-        checkThirdParty = false,
-        library = {
-          vim.env.VIMRUNTIME,
-        }
-      },
-      telemetry = { enable = false },
-    },
-  },
-}
 
 -- nvim-cmp supports additional completion capabilities, so broadcast that to servers
 local capabilities = vim.lsp.protocol.make_client_capabilities()
@@ -577,18 +568,59 @@ require("mason-lspconfig").setup {
     automatic_enable = {
         "lua_ls",
         "vimls",
-        "typescript-language-server", 
-        "ts_ls",
-        "jsonls"
+        "jsonls",
+        "tsserver",
+        "gopls",
+        "eslint",
+        "tailwindcss", -- If you want tailwindcss to use y
+    },
+    handlers = {
+        -- This function serves as a default handler for servers not explicitly listed
+        function(server_name)
+            require("lspconfig")[server_name].setup {
+                on_attach = on_attach,
+                capabilities = capabilities,
+            }
+        end,
+        Lua = function ()
+          require("lspconfig").lua_ls.setup {
+            on_attach = on_attach,
+            settings = {
+              Lua = {
+                runtime = {
+                  -- Tell the language server which version of Lua you're using (most projects use Lua 5.1 or 5.2)
+                  version = 'LuaJIT',
+                  -- Setup your lua path to include the Neovim runtime files
+                  path = vim.split(package.path, ';'),
+                },
+                diagnostics = {
+                  -- Get the language server to recognize the `vim` global
+                  globals = { 'vim' },
+                },
+                workspace = {
+                  -- Make the server aware of Neovim's runtime files
+                  library = vim.api.nvim_get_runtime_file("", true),
+                  checkThirdParty = false,
+                },
+                -- Do not send telemetry data containing your workspace paths
+                telemetry = {
+                  enable = false,
+                },
+              },
+            },
+          }
+        end,
+        tsserver = function()
+            require("lspconfig").tsserver.setup {
+                on_attach = on_attach,
+                capabilities = capabilities,
+                settings = {
+                }
+            }
+        end,
     }
 }
 
-
-lspconfig.ts_ls.setup {
-    on_attach = on_attach,
-    capabilities = capabilities,
-}
--- ... other servers
 lspconfig.gopls.setup {
     on_attach = on_attach,
     capabilities = capabilities,
