@@ -162,6 +162,46 @@ require('lazy').setup({
       "nvim-lua/plenary.nvim",
       "nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
       "MunifTanjim/nui.nvim",
+    },
+    opts = {
+      filesystem = {
+        window = {
+          mappings = {
+            ["O"] = "open_with_native_viewer",
+          }
+        },
+        commands = {
+          open_with_native_viewer = function (state)
+            local node = state.tree:get_node()
+            local path = node:get_id()
+
+            -- Important: Only try to open if it's a file, not a directory
+            if node.type == "file" then
+              local command_prefix
+              if vim.fn.has("mac") == 1 then
+                command_prefix = "open"
+              elseif vim.fn.has("unix") == 1 then
+                command_prefix = "xdg-open"
+              elseif vim.fn.has("win32") == 1 then
+                command_prefix = "start"
+              else
+                vim.notify("Unsupported OS for opening files externally.", vim.log.levels.WARN)
+                return
+              end
+
+              -- Construct the command
+              local cmd = { command_prefix, path }
+
+              -- Execute the command in a detached job
+              -- This makes sure Neovim doesn't wait for the external app to close
+              vim.fn.jobstart(cmd, { detach = true })
+              vim.notify("Opened " .. path .. " with native viewer.", vim.log.levels.INFO)
+            else
+              vim.notify("Cannot open directories with native viewer.", vim.log.levels.INFO)
+            end
+          end
+        }
+      }
     }
   },
   -- NOTE: This is where your plugins related to LSP can be installed.
@@ -414,8 +454,7 @@ require('telescope').setup {
 -- Enable telescope fzf native, if installed
 pcall(
   require('telescope').load_extension,
-  'fzf',
-  'live_grep_args'
+  'fzf'
 )
 
 
@@ -491,9 +530,9 @@ vim.keymap.set('n', '<leader>sf', require('telescope.builtin').find_files, { des
 vim.keymap.set('n', '<leader>sr', require('telescope.builtin').oldfiles, { desc = '[S]earch [R]ecent files' })
 vim.keymap.set('n', '<leader>sj', require('telescope.builtin').jumplist, { desc = '[S]earch [J]umplist' })
 vim.keymap.set('n', '<leader>sh', require('telescope.builtin').help_tags, { desc = '[S]earch [H]elp' })
-vim.keymap.set("n", "<leader>sg", ":lua require('telescope').extensions.live_grep_args.live_grep_args()<CR>", { desc = '[S]earch [G]rep' })
+vim.keymap.set("n", "<leader>sg", require('telescope.builtin').live_grep, { desc = '[S]earch [G]rep' })
 vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostic' })
-vim.keymap.set('n', '<leader>sv', require('telescope.builtin').lsp_document_symbols, { desc = '[S]earch [V]ariables' })
+vim.keymap.set('n', '<leader>fv', require('telescope.builtin').lsp_document_symbols, { desc = '[F]ind [V]ariables' })
 
 vim.keymap.set('n', '<leader>/', function()
   -- You can pass additional configuration to telescope to change theme, layout, etc.
@@ -529,7 +568,6 @@ vim.keymap.set('n', '<leader>d', vim.diagnostic.setloclist, { desc = "Open diagn
 
   -- See `:help K` for why this keymap
   nmap('K', vim.lsp.buf.hover, 'Hover Documentation')
-  nmap('<C-k>', vim.lsp.buf.signature_help, 'Signature Documentation')
 
   -- Lesser used LSP functionality
   nmap('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
